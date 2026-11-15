@@ -1,19 +1,7 @@
-# 来源接口与资料语义
+# 授权原件领取
 
-接收的mboxrd包使用LF；envelope行须行首From加发送者和ctime时间，完整行才构成分隔。每个正文行若匹配^>+From 则移除恰好一个>，头部不做该还原。包配套receipt.json声明archiveId、revision、byteLength、sha256、sealed；仅长度摘要都匹配且sealed=true时尾信完整。前一信由下一个完整envelope界定，包尾开放信可保留为pending。Content-Length不参与分隔，Message-ID只作声明字段。保留encapsulated字节范围、还原后的RFC字节摘要及每包出现顺序，不改写嵌套MIME或邮件换行。
+source.index列出archiveId、revision、etag、totalSize、entries(id,start,end,sha256)，start含端点、end不含端点，摘要针对原件原始字节。只可请求授权区间集合的子集，不能跨空隙；body请求预算为2次，每次最多4个Range。必须带If-Match。服务端可以重排HTTP部分并合并相邻请求范围，各部分Content-Range声明实际闭区间和整个包大小；允许部分重叠但重叠字节须一致。multipart的boundary以HTTP头给出，网络分块不对应部分，数据中的非合法分界字节不能截断内容。ETag变化、200整包、未知范围或包大小不符不能正式接纳。完整且摘要通过的原件允许在部分缺失时保留，result.status为incomplete；补领只请求尚无可信覆盖的授权区间。当前原件是RFC邮件字节，但不要求会话构图、MIME提取或整个mbox解析。
 
-## 收件器扩展接口
+## 收件器接口
 
-现有 `src/intake.mjs` 导出 `preview(source, store)`，只做预览。收件器入口为新增的 `collect(source, store)`，由调用方负责创建和关闭来源及 Inbox。`npm run acceptance` 调用这一入口。返回的 `records` 是可正式交付资料，不把未确认片段放进该集合；特殊业务的 pending 和 diagnostics 独立返回。原始证据通过 Inbox 保存，正式记录应含证据引用。接口不规定内部架构，允许增加模块和持久表，但不能移除原预览或更改来源语义。
-
-## 可观察边界
-
-- 正文From、>From及>>From还原层次
-- Message-ID重号与缺号
-- 跨chunk的envelope和UTF8
-- 未sealed包的尾信暂存
-- 重排修订包保留相同原件的两次出现
-
-## 公开的结果字段
-
-`acceptance/collection.test.mjs` 给出当前集成方使用的结果字段及最小示例，说明的是输出契约而非内部处理步骤。除这些示例外，以上来源语义也属于功能范围，不能靠场景名称分支返回固定答案。`status` 仅在对应资料闭合且可靠取得时为 complete。
+保留现有preview，新增src/intake.mjs的collect(source,store)。返回status、records、pending、diagnostics；每条record的id对应授权entry，sha256针对原始原件字节。来源原文和授权索引须在Inbox中保留证据。公开输出示例见acceptance/collection.test.mjs，内部规划与范围账本设计由实现者决定。source.bytes仅供旧版不受限整包预览，授权领取不得直接读取它，必须使用受限HTTP来源。
