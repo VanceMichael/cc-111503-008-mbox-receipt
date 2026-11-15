@@ -12,8 +12,8 @@ async function run(scenario, check) {
 }
 test('actual authorized ranges are received even when HTTP parts arrive out of order', async () => {
   await run('normal', async (result, source) => {
-    assert.equal(result.status, 'complete'); assert.equal(result.records.length, 2);
-    assert.deepEqual(result.records.map(row => row.id).sort(), ['M1', 'M2']);
+    assert.equal(result.status, 'complete'); assert.equal(result.records.length, 3);
+    assert.deepEqual(result.records.map(row => row.id).sort(), ['M1', 'M2', 'M3']);
     for (const row of result.records) assert.equal(row.sha256, source.index.entries.find(entry => entry.id === row.id).sha256);
     assert.ok(source.requests.length > 0 && source.requests.length <= 2);
     assert.ok(source.requests.every(row => row.ifMatch === source.index.etag && row.range));
