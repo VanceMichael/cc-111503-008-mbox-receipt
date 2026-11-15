@@ -34,6 +34,12 @@ export async function fixture(scenario = 'normal') {
     if (ranges.length > 4 || ranges.some(range => !permitted(range))) {
       response.writeHead(403); return response.end('range exceeds department grant');
     }
+    if (ranges.length === 1) {
+      const [start, end] = ranges[0];
+      response.writeHead(206, { 'content-type': 'message/rfc822', 'content-range': `bytes ${start}-${end}/${bytes.length}`, etag: index.etag });
+      const content = bytes.subarray(start, end + 1);
+      return response.end(scenario === 'truncated' ? content.subarray(0, -2) : content);
+    }
     const boundary = 'mail-grant-boundary';
     response.writeHead(206, { 'content-type': 'multipart/byteranges; boundary="' + boundary + '"', etag: index.etag });
     const parts = [];

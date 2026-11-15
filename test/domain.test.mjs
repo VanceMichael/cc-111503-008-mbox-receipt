@@ -30,3 +30,13 @@ test('authorized two-range response really uses multipart byte ranges', async ()
     const bytes = Buffer.from(await response.arrayBuffer()); assert.ok(bytes.includes(Buffer.from('Content-Range: bytes')));
   } finally { await source.close(); }
 });
+
+test('a single byte range has the ordinary RFC206 response shape', async () => {
+  const source = await fixture();
+  try {
+    const entry = source.index.entries[0];
+    const response = await fetch(source.url + source.path, { headers: { Range: 'bytes=' + entry.start + '-' + (entry.end - 1), 'If-Match': source.index.etag } });
+    assert.equal(response.status, 206); assert.match(response.headers.get('content-range'), /^bytes /);
+    assert.equal((await response.arrayBuffer()).byteLength, entry.end - entry.start);
+  } finally { await source.close(); }
+});

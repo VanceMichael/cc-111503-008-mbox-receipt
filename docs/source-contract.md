@@ -5,3 +5,5 @@ source.index列出archiveId、revision、etag、totalSize、entries(id,start,end
 ## 收件器接口
 
 保留现有preview，新增src/intake.mjs的collect(source,store)。返回status、records、pending、diagnostics；每条record的id对应授权entry，sha256针对原始原件字节。来源原文和授权索引须在Inbox中保留证据。公开输出示例见acceptance/collection.test.mjs，内部规划与范围账本设计由实现者决定。source.bytes仅供旧版不受限整包预览，授权领取不得直接读取它，必须使用受限HTTP来源。
+
+仅请求一个Range时来源返回普通206和Content-Range；多Range返回multipart，可以合并相邻区间。单部分与多部分的覆盖和授权判定一致，不能把HTTP报文边界等同原件边界。
